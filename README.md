@@ -1,43 +1,93 @@
-# ttgifconv — Конвертер в Telegram стикеры
+# ttgifconv
 
-**TikTok WebP → Telegram WebM Sticker Converter**
+Конвертер анимированных `GIF` и `WebP` в Telegram-совместимые видео-стикеры `WEBM (VP9)`.
 
-Приложение для конвертации анимированных GIF и WebP файлов в Telegram-совместимые `.webm` стикеры с автоматическим сжатием и проверкой ограничений.
+| | |
+| --- | --- |
+| ![Главный экран приложения](photo/Screenshot_3.png) | ![Экран результата и истории](photo/Screenshot_4.png) |
 
-## Особенности
+## Содержание
 
-- ✅ **Поддерживаемые форматы**: `.gif`, `.webp` (анимированный)
-- ✅ **Выходной формат**: `.webm` (VP9)
-- ✅ **Telegram ограничения**:
-  - Размер: 512×512 пикселей (одна сторона ровно 512px)
-  - Длительность: ≤ 3 секунд
-  - Размер файла: ≤ 256 KB
-- ✅ **Итеративное сжатие**: автоматический подбор битрейта и FPS
-- ✅ **Красивый UI**: прогресс конвертации по шагам
-- ✅ **История**: локальное сохранение через IndexedDB
-- ✅ **Dark mode**: поддержка тёмной темы
+- [Что умеет](#что-умеет)
+- [Техстек](#техстек)
+- [Структура проекта](#структура-проекта)
+- [Требования](#требования)
+- [Быстрый старт](#быстрый-старт)
+- [Переменные окружения](#переменные-окружения)
+- [Доступные команды](#доступные-команды)
+- [Как работает конвертация](#как-работает-конвертация)
+- [API](#api)
+- [История конвертаций](#история-конвертаций)
+- [Тесты и проверка](#тесты-и-проверка)
+- [Troubleshooting](#troubleshooting)
+
+## Что умеет
+
+- принимает `.gif` и анимированный `.webp`
+- конвертирует в `.webm` с кодеком `VP9`
+- приводит результат к точному размеру `512x512`
+- ограничивает длительность до `3` секунд
+- подбирает сжатие под лимит Telegram `256 KB`
+- показывает preview результата и mini-preview в истории
+- хранит историю локально в браузере через `IndexedDB`
+
+## Техстек
+
+- **Monorepo**: `pnpm workspaces`
+- **Frontend**: React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui
+- **Backend**: Fastify, TypeScript, fluent-ffmpeg, sharp
+- **Shared package**: общие типы и константы TypeScript
+- **Storage**: client-side `IndexedDB` для истории
+
+## Структура проекта
+
+```text
+.
+├── backend/                 # Fastify API + конвертация через FFmpeg
+│   └── src/
+│       ├── app.ts           # сборка Fastify приложения
+│       ├── index.ts         # entry point backend
+│       ├── config/env.ts    # env-конфиг
+│       ├── routes/          # upload / convert / download / health / history
+│       ├── services/        # pipeline конвертации
+│       ├── utils/ffmpeg.ts  # ffmpeg / ffprobe / sharp утилиты
+│       └── tests/           # backend tests
+├── frontend/                # React UI
+│   └── src/
+│       ├── App.tsx
+│       ├── components/
+│       ├── lib/api.ts
+│       ├── lib/history-db.ts
+│       └── tests/
+├── shared/                  # @ttgifconv/shared
+│   └── src/
+│       ├── constants.ts
+│       ├── index.ts
+│       └── types/
+├── outputs/                 # готовые .webm файлы
+├── tmp/                     # временные файлы конвертации
+├── package.json             # root workspace scripts
+└── pnpm-workspace.yaml
+```
 
 ## Требования
 
-- **Node.js**: ≥ 18.0.0
-- **npm**: ≥ 9.0.0
-- **FFmpeg**: должен быть установлен и доступен в PATH
+- `Node.js >= 18`
+- `pnpm`
+- установленный `FFmpeg` и `ffprobe` в `PATH`
 
-## Установка
-
-### 1. Установка FFmpeg
+### Установка FFmpeg
 
 #### Windows
 
 ```bash
-# Через winget
 winget install Gyan.FFmpeg
+```
 
-# Или через chocolatey
+или:
+
+```bash
 choco install ffmpeg
-
-# Или скачать с https://ffmpeg.org/download.html
-# и добавить в PATH вручную
 ```
 
 #### macOS
@@ -46,220 +96,269 @@ choco install ffmpeg
 brew install ffmpeg
 ```
 
-#### Linux
+#### Ubuntu / Debian
 
 ```bash
-# Ubuntu/Debian
-sudo apt update && sudo apt install ffmpeg
-
-# Fedora
-sudo dnf install ffmpeg
-
-# Arch
-sudo pacman -S ffmpeg
+sudo apt update
+sudo apt install ffmpeg
 ```
 
-### 2. Установка зависимостей проекта
-
-```bash
-cd E:\ttgifconv
-npm install
-```
-
-### 3. Проверка установки FFmpeg
+Проверка:
 
 ```bash
 ffmpeg -version
 ffprobe -version
 ```
 
-## Запуск
+## Быстрый старт
 
-### Режим разработки (оба приложения одновременно)
-
-```bash
-npm run dev
-```
-
-Это запустит:
-- **Backend**: http://localhost:3001
-- **Frontend**: http://localhost:5173
-
-### Отдельный запуск
-
-#### Backend
+### 1. Установка зависимостей
 
 ```bash
-cd backend
-npm run dev
+pnpm install
 ```
 
-#### Frontend
+### 2. Создание `.env`
 
-```bash
-cd frontend
-npm run dev
-```
-
-## Сборка для продакшена
-
-```bash
-# Сборка всех проектов
-npm run build
-
-# Или по отдельности
-npm run build:backend
-npm run build:frontend
-```
-
-## Тесты
-
-```bash
-# Запуск всех тестов
-npm test
-
-# Type checking
-npm run type-check
-
-# Linting
-npm run lint
-```
-
-## Структура проекта
-
-```
-conv/
-├── shared/              # Общие TypeScript типы
-│   ├── src/
-│   │   ├── constants.ts # Telegram ограничения, коды ошибок
-│   │   ├── types/       # API типы, типы конвертации, истории
-│   │   └── index.ts
-│   └── package.json
-│
-├── backend/             # Fastify сервер + FFmpeg
-│   ├── src/
-│   │   ├── config/      # Конфигурация (env)
-│   │   ├── routes/      # API endpoints
-│   │   ├── services/    # Бизнес-логика конвертации
-│   │   ├── utils/       # FFmpeg утилиты
-│   │   ├── tests/       # Тесты
-│   │   ├── app.ts       # Fastify приложение
-│   │   └── index.ts     # Entry point
-│   └── package.json
-│
-├── frontend/            # React + Vite + Tailwind
-│   ├── src/
-│   │   ├── components/  # UI компоненты
-│   │   │   ├── ui/      # shadcn/ui примитивы
-│   │   │   ├── FileUpload.tsx
-│   │   │   ├── ConversionProgress.tsx
-│   │   │   └── ResultPanel.tsx
-│   │   ├── lib/         # Утилиты (api, history-db)
-│   │   ├── App.tsx      # Главное приложение
-│   │   └── main.tsx     # Entry point
-│   └── package.json
-│
-├── tmp/                 # Временные файлы (игнорируется)
-├── outputs/             # Готовые .webm файлы (игнорируется)
-└── package.json         # Корневой package.json (workspaces)
-```
-
-## API Endpoints
-
-| Метод | Endpoint | Описание |
-|-------|----------|----------|
-| GET | `/api/health` | Проверка статуса сервера и FFmpeg |
-| POST | `/api/upload` | Загрузка файла (multipart/form-data) |
-| POST | `/api/convert/:fileId` | Конвертация файла |
-| GET | `/api/download/:fileId` | Скачивание готового .webm |
-| GET | `/outputs/:fileId.webm` | Прямой доступ к файлу |
-
-## Переменные окружения
-
-Создайте файл `.env` в корне проекта:
+Создай файл `.env` в корне проекта:
 
 ```env
-# Backend
 PORT=3001
 HOST=127.0.0.1
 MAX_FILE_SIZE=52428800
 TMP_DIR=./tmp
 OUTPUT_DIR=./outputs
-
-# Conversion settings
 DEFAULT_FPS=30
 DEFAULT_BITRATE=500
 MAX_COMPRESSION_PASSES=5
 MIN_QUALITY=0.5
 ```
 
-## Как это работает
+Если `.env` нет, backend все равно стартует с дефолтами из `backend/src/config/env.ts`.
 
-### Конвертация Pipeline
+### 3. Запуск разработки
 
-1. **Загрузка** → файл сохраняется во временную директорию
-2. **Инспекция** → ffprobe читает метаданные (размер, длительность, FPS)
-3. **Валидация** → проверка типа файла и анимации
-4. **Конвертация** → масштабирование в 512×512, обрезка до 3 секунд
-5. **Итеративное сжатие** → подбор битрейта пока размер ≤ 256 KB
-6. **Верификация** → финальная проверка всех ограничений Telegram
-7. **Результат** → файл перемещается в `outputs/`, возвращается metadata
-
-### Стратегия сжатия
-
-```
-Pass 1: 500 kbps @ 30 fps
-Pass 2: 350 kbps @ 30 fps
-Pass 3: 245 kbps @ 30 fps
-Pass 4: 170 kbps @ 22 fps
-Pass 5: 120 kbps @ 15 fps (минимальное качество)
+```bash
+pnpm dev
 ```
 
-Если после 5 попыток файл всё ещё > 256 KB, возвращается лучший вариант с предупреждением.
+Это поднимет:
 
-## История
+- frontend: `http://localhost:5173`
+- backend: `http://127.0.0.1:3001`
 
-История конвертаций сохраняется локально в браузере через **IndexedDB**:
+### 4. Сборка
 
-- Оригинальное имя файла
-- Формат (gif/webp)
-- Выходные метаданные (размер, длительность, FPS)
-- Blob готового файла (для скачивания без сервера)
-- Дата/время конвертации
+```bash
+pnpm build
+```
 
-**Действия с историей**:
-- Скачать .webm
-- Повторно конвертировать (загрузить файл снова)
-- Удалить из истории
+## Переменные окружения
 
-## Ограничения
+Все переменные читаются в `backend/src/config/env.ts`.
 
-- Максимальный размер загружаемого файла: **50 MB**
-- Статический WebP **не поддерживается** (только анимированный)
-- Конвертация работает только локально (требуется установленный FFmpeg)
+| Переменная | Назначение | По умолчанию |
+| --- | --- | --- |
+| `PORT` | порт backend | `3001` |
+| `HOST` | host backend | `127.0.0.1` |
+| `MAX_FILE_SIZE` | лимит upload в байтах | `52428800` |
+| `TMP_DIR` | временная директория | `./tmp` |
+| `OUTPUT_DIR` | директория готовых файлов | `./outputs` |
+| `DEFAULT_FPS` | верхний target fps | `30` |
+| `DEFAULT_BITRATE` | стартовый bitrate в kbps | `500` |
+| `MAX_COMPRESSION_PASSES` | максимум попыток сжатия | `5` |
+| `MIN_QUALITY` | минимальный quality floor | `0.5` |
 
-## Технологии
+## Доступные команды
 
-### Backend
-- **Fastify** — быстрый HTTP сервер
-- **fluent-ffmpeg** — обёртка для FFmpeg
-- **uuid** — генерация уникальных ID
-- **zod** — валидация схем
+### Root
 
-### Frontend
-- **React 18** — UI библиотека
-- **Vite** — сборщик
-- **Tailwind CSS** — стилизация
-- **shadcn/ui** — компоненты
-- **idb** — работа с IndexedDB
-- **lucide-react** — иконки
+```bash
+pnpm dev
+pnpm build
+pnpm test
+pnpm lint
+pnpm type-check
+```
 
 ### Shared
-- **TypeScript** — строгая типизация
-- **ES Modules** — современный формат модулей
 
-## Лицензия
+```bash
+pnpm --filter @ttgifconv/shared build
+pnpm --filter @ttgifconv/shared type-check
+```
 
-MIT
+### Backend
 
+```bash
+pnpm --filter @ttgifconv/backend dev
+pnpm --filter @ttgifconv/backend build
+pnpm --filter @ttgifconv/backend test
+pnpm --filter @ttgifconv/backend type-check
+```
 
+### Frontend
+
+```bash
+pnpm --filter @ttgifconv/frontend dev
+pnpm --filter @ttgifconv/frontend build
+pnpm --filter @ttgifconv/frontend test
+pnpm --filter @ttgifconv/frontend type-check
+```
+
+## Как работает конвертация
+
+Pipeline находится в `backend/src/services/conversion.ts`.
+
+1. **Upload** - файл сохраняется во временную директорию `tmp/`
+2. **Inspect** - `ffprobe` / `sharp` читают метаданные
+3. **Validate** - проверяется формат и анимированность WebP
+4. **Resize** - результат принудительно приводится к `512x512`
+5. **Trim** - длительность режется до `3` секунд
+6. **Encode** - `ffmpeg` кодирует `webm` через `libvpx-vp9`
+7. **Compress** - iterative compression пытается уложиться в `256 KB`
+8. **Verify** - проверка финальных ограничений Telegram
+9. **Store** - готовый файл перемещается в `outputs/`
+
+### Ограничения Telegram
+
+Определены в `shared/src/constants.ts`:
+
+- размер: `512x512`
+- длительность: `<= 3s`
+- размер файла: `<= 256 KB`
+- output format: `webm`
+- output codec: `vp9`
+
+## API
+
+### `GET /api/health`
+
+Проверка состояния backend и доступности FFmpeg.
+
+### `POST /api/upload`
+
+Multipart upload файла.
+
+Возвращает:
+
+```json
+{
+  "fileId": "uuid",
+  "fileName": "example.gif",
+  "fileSize": 12345,
+  "mimeType": "image/gif"
+}
+```
+
+### `POST /api/convert/:fileId`
+
+Запускает конвертацию загруженного файла.
+
+Возвращает:
+
+```json
+{
+  "success": true,
+  "fileId": "uuid",
+  "downloadUrl": "/api/download/uuid",
+  "metadata": {
+    "width": 512,
+    "height": 512,
+    "duration": 2.1,
+    "fps": 30,
+    "fileSize": 152300,
+    "format": "webm",
+    "codec": "vp9"
+  },
+  "warnings": []
+}
+```
+
+### `GET /api/download/:fileId`
+
+Отдает готовый `.webm` как attachment.
+
+### `GET /outputs/:fileId.webm`
+
+Статическая раздача файлов из `outputs/`.
+
+### `GET /api/history`
+
+Сейчас это placeholder: основная история хранится на клиенте в браузере.
+
+## История конвертаций
+
+История хранится в `IndexedDB` через `frontend/src/lib/history-db.ts`.
+
+Сохраняется:
+
+- `originalName`
+- `originalFormat`
+- timestamp
+- metadata результата
+- warnings
+- `outputBlob` для локального скачивания
+
+Во вкладке истории доступны:
+
+- mini-preview
+- скачивание результата
+- удаление записи
+- повторное открытие результата
+
+## Тесты и проверка
+
+### Полная проверка
+
+```bash
+pnpm type-check
+pnpm test
+```
+
+### Полезные targeted-команды
+
+```bash
+pnpm --filter @ttgifconv/backend test -- --run src/tests/conversion.test.ts
+pnpm --filter @ttgifconv/backend test -- --run src/tests/animated-webp.test.ts
+pnpm --filter @ttgifconv/frontend test -- --run src/components/ResultPanel.test.tsx
+```
+
+## Troubleshooting
+
+### `FFmpeg is not available`
+
+Проверь, что `ffmpeg` и `ffprobe` доступны в `PATH`:
+
+```bash
+ffmpeg -version
+ffprobe -version
+```
+
+### Upload проходит, но конвертация падает
+
+Проверь:
+
+- файл действительно анимированный
+- входной формат `.gif` или animated `.webp`
+- в `tmp/` и `outputs/` есть права на запись
+
+### Не открывается история
+
+История клиентская и хранится в `IndexedDB`, поэтому:
+
+- она привязана к конкретному браузеру
+- очистка site data удалит историю
+- в private/incognito режиме поведение может отличаться
+
+### После rename не резолвятся workspace-пакеты
+
+Обнови workspace links:
+
+```bash
+pnpm install
+```
+
+## Статус проекта
+
+Сейчас это локальный monorepo-инструмент для конвертации TikTok-style анимаций в Telegram video stickers, без серверной БД и без server-side истории.
